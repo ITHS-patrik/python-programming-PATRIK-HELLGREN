@@ -50,7 +50,6 @@ for i in range(len(te_x)):
     print(f"Sample with (width, height): ({te_x[i]}, {te_y[i]}) classified as {pokemon}")
 
 # PLOT
-
 # Training data
 plt.scatter(tr_x[tr_z == 0], tr_y[tr_z == 0], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
 plt.scatter(tr_x[tr_z == 1], tr_y[tr_z == 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
@@ -64,4 +63,31 @@ plt.ylabel("Height")
 plt.title("Pichu eller Pikachu?")
 plt.grid(True)
 plt.legend()
+
+# 1. USER INPUT & EXCEPTION HANDLING
+while True:
+    try:
+        raw_input_x = input("Please input the x value (width) for your test data point: ")
+        raw_input_y = input("Please input the y value (height) for your test data point: ")
+
+        test_input_x = float(raw_input_x)
+        test_input_y = float(raw_input_y)
+        
+        if test_input_x <= 0 or test_input_y <= 0:
+            raise ValueError("NegativeValue")
+        
+    except ValueError as e:
+        if str(e) == "NegativeValue":
+            print(f"Null or negative values are not accepted.\nYour input was: ({raw_input_x}, {raw_input_y}).\nTry again.")
+        else:
+            print(f'Your input "({raw_input_x}, {raw_input_y})" contains invalid characters! Only use floats > 0.\nTry again.')
+
+    else:
+        print(f"Thank you!\nYour input: ({test_input_x}, {test_input_y}) classifies as {test_input_x}.") # fixa klassificeringen!
+        break
+
+# 2. 10-NN
+
+
+# SHOWING THE SCATTER PLOT
 plt.show()
