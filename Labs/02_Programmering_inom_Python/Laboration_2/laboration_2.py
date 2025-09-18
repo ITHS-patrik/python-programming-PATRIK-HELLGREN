@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-data_path_training = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
-data_path_test = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
+data_path_training = "Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
+data_path_test = "Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
 clean_content_tr = []
 clean_content_te = []
 
@@ -47,21 +47,28 @@ print(f"tr_labels:\n{tr_labels}")
 te_points = np.column_stack((te_x, te_y))
 print(f"te_points:\n{te_points}")
 
-predicitons = []
+predictions = []
 
 for te_point in te_points:
-    diff_x_y = tr_points[:, np.newaxis, :] - te_points[np.newaxis, :, :]
+    diff_x_y = tr_points[:, np.newaxis, :] - te_point
     distances = np.sqrt(np.sum(diff_x_y ** 2, axis=2))
     nearest_id = np.argmin(distances, axis=0)
     prediction_label = tr_labels[nearest_id]
-    predicitons.append(prediction_label)
+    predictions.append(prediction_label)
 
 print(f"distances:\n{distances}")
 print(f"nearest_id:\n{nearest_id}")
 print(f"prediction_label:\n{prediction_label}")
-print(f"predictions, no np array:\n{predicitons}")
-predicitons = np.array(predicitons)
-print(f"predictions, np array:\n{predicitons}")
+print(f"predictions, no np array:\n{predictions}")
+predictions = np.array(predictions)
+print(f"predictions, np array:\n{predictions}")
+
+# TEST DATA CONCLUSION
+print(te_x)
+print(te_y)
+for i in range(len(te_x)):
+    pokemon = "Pichu" if predictions[i] == 0 else "Pikachu"
+    print(f"Sample with (width, height): ({te_x[i]}, {te_y[i]}) classified as {pokemon}")
 
 # PLOT
 
