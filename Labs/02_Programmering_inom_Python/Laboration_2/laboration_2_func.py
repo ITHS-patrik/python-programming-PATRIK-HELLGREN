@@ -93,24 +93,24 @@ def plot_data(**kwargs):
         plt.scatter(test_x[predictions == 1], test_y[predictions == 1], color="yellow", edgecolors="black", label="Pikachu (test)", marker="^")
 
     # Input data 1-NN
-    if all(k in kwargs for k in ("pokemon_1NN", "refined_input_x", "refined_input_y")):
+    if all(k in kwargs for k in ("pokemon_1NN", "input_x", "input_y")):
         pokemon_1NN = kwargs["pokemon_1NN"]
-        refined_input_x = kwargs["refined_input_x"]
-        refined_input_y = kwargs["refined_input_y"]
+        input_x = kwargs["input_x"]
+        input_y = kwargs["input_y"]
         if pokemon_1NN == "Pichu":
-            plt.scatter(refined_input_x, refined_input_y, color="red", edgecolors="black", label="Pichu (user_input 1-NN)", marker="*", s=175)
+            plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 1-NN)", marker="*", s=175)
         else:
-            plt.scatter(refined_input_x, refined_input_y, color="red", edgecolors="black", label="Pikachu (user_input 1-NN)", marker="*", s=175)
+            plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 1-NN)", marker="*", s=175)
 
     # Input data 10-NN
-    if all(k in kwargs for k in ("pokemon_10NN", "refined_input_x_10NN", "refined_input_y_10NN")):
+    if all(k in kwargs for k in ("pokemon_10NN", "input_x", "input_y")):
         pokemon_10NN = kwargs["pokemon_10NN"]
-        refined_input_x_10NN = kwargs["refined_input_x_10NN"]
-        refined_input_y_10NN = kwargs["refined_input_y_10NN"]
+        input_x = kwargs["input_x"]
+        input_y = kwargs["input_y"]
         if pokemon_10NN == "Pichu":
-            plt.scatter(refined_input_x_10NN, refined_input_y_10NN, color="red", edgecolors="black", label="Pichu (user_input 1-NN)", marker="*", s=175)
+            plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 10-NN)", marker="*", s=175)
         else:
-            plt.scatter(refined_input_x_10NN, refined_input_y_10NN, color="red", edgecolors="black", label="Pikachu (user_input 1-NN)", marker="*", s=175)
+            plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 10-NN)", marker="*", s=175)
 
     plt.xlabel("Width")
     plt.ylabel("Height")
@@ -118,59 +118,49 @@ def plot_data(**kwargs):
     plt.grid(True)
     plt.legend()
 
-# FUNCTION FOR USER INPUT (1-NN) & ERROR HANDLING
-def user_input_1NN_Error_handling(training_points, training_labels):
+# FUNCTION FOR USER INPUT & ERROR HANDLING
+def user_input_err(training_points, training_labels):
 
     while True:
         try:
-            raw_input_x = input("Please input the x value (width) for your test data point: ")
-            raw_input_y = input("Please input the y value (height) for your test data point: ")
+            input_x = float(input("Please input the x value (width) for your test data point: "))
+            input_y = float(input("Please input the y value (height) for your test data point: "))
 
-            refined_input_x = float(raw_input_x)
-            refined_input_y = float(raw_input_y)
-            
-            if refined_input_x <= 0 or refined_input_y <= 0:
+            if input_x <= 0 or input_y <= 0:
                 raise ValueError("NegativeValue")
             
         except ValueError as e:
             if str(e) == "NegativeValue":
-                print(f"Null or negative values are not accepted.\nYour input was: ({raw_input_x}, {raw_input_y}).\nTry again.")
+                print(f"Null or negative values are not accepted.\nYour input was: ({input_x}, {input_y}).\nTry again.")
             else:
-                print(f'Your input "({raw_input_x}, {raw_input_y})" contains invalid characters! Only use floats > 0.\nTry again.')
+                print(f'Your input "({input_x}, {input_y})" contains invalid characters! Only use floats > 0.\nTry again.')
 
         else:
-            input_data_point = np.array([refined_input_x, refined_input_y])
-            input_diff_xy = training_points - input_data_point
-            distances = np.sqrt(np.sum(input_diff_xy ** 2, axis=1))
+            # 1-NN
+            input_data_point = np.array([input_x, input_y])
+            distances = np.sqrt(np.sum((training_points - input_data_point) ** 2, axis=1))
             nearest_id = np.argmin(distances)
-            prediction_label = training_labels[nearest_id]
-            pokemon_1NN = "Pichu" if prediction_label == 0 else "Pikachu"
+            prediction_label_1NN = training_labels[nearest_id]
+            pokemon_1NN = "Pichu" if prediction_label_1NN == 0 else "Pikachu"
 
             print(f"Thank you!")
-            print(f"Your input ({refined_input_x}, {refined_input_y}) classifies as {pokemon_1NN} with 1-NN.")
+            print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_1NN} with 1-NN.")
+
+            # 10-NN
+            ten = 10
+            nearest_ids = np.argsort(distances)[:ten]
+            nearest_ids_labels = training_labels[nearest_ids]
+
+            label_count = np.bincount(nearest_ids_labels.astype(int))
+            prediction_label_10NN = np.argmax(label_count)
+
+            pokemon_10NN = "Pichu" if prediction_label_10NN == 0 else "Pikachu"
+
+            print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_10NN} with 10-NN.")
+
             break
 
-    return refined_input_x, refined_input_y, distances, pokemon_1NN
-
-# FUNCTION FOR USER INPUT (10-NN)
-def user_input_10NN(refined_input_x, refined_input_y, distances):
-
-    refined_input_x_10NN = refined_input_x
-    refined_input_y_10NN = refined_input_y
-    #input_data_point_10NN = np.array([refined_input_x_10NN, refined_input_y_10NN]) <-- används ej i print längst ned. ska den användas?
-
-    ten = 10
-    nearest_ids = np.argsort(distances)[:ten]
-    nearest_ids_labels = training_labels[nearest_ids]
-
-    label_count = np.bincount(nearest_ids_labels.astype(int))
-    prediction_label = np.argmax(label_count)
-
-    pokemon_10NN = "Pichu" if prediction_label == 0 else "Pikachu"
-
-    print(f"Your input ({refined_input_x_10NN}, {refined_input_y_10NN}) classifies as {pokemon_10NN} with 10-NN.")
-
-    return pokemon_10NN, refined_input_x_10NN, refined_input_y_10NN
+    return input_x, input_y, distances, pokemon_1NN, pokemon_10NN
 
 # FUNCTION FOR PRINTING A REFLECTION ABOUT 1-NN VS. 10-NN
 def reflection():
@@ -191,10 +181,8 @@ pokemon_classification_1NN(predictions, test_x, test_y)
 plot_data(test_x=test_x, test_y=test_y, predictions=predictions)
 
 # PROCESS THE USER INPUT DATA
-refined_input_x, refined_input_y, distances, pokemon_1NN = user_input_1NN_Error_handling(training_points, training_labels)
-pokemon_10NN, refined_input_x_10NN, refined_input_y_10NN = user_input_10NN(refined_input_x, refined_input_y, distances)
-plot_data(pokemon_1NN=pokemon_1NN, refined_input_x=refined_input_x, refined_input_y=refined_input_y)
-plot_data(pokemon_10NN=pokemon_10NN, refined_input_x_10NN=refined_input_x_10NN, refined_input_y_10NN=refined_input_y_10NN)
+input_x, input_y, distances, pokemon_1NN, pokemon_10NN = user_input_err(training_points, training_labels)
+plot_data(pokemon_1NN=pokemon_1NN, pokemon_10NN=pokemon_10NN, input_x=input_x, input_y=input_y)
 reflection()
 
 # SHOWING THE SCATTER PLOT
