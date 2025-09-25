@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-data_path_training = "Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
-data_path_test = "Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
+data_path_training = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
+data_path_test = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
 
 def read_and_clean_data(data_path):
     """ A function for reading the data from the source file and then cleaning/preparing it for x/y/z-separation and conversion. """
@@ -93,7 +93,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     # Training data
     plt.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
     plt.scatter(training_points[train_z == 1, 0], training_points[train_z == 1, 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
-    for i in nearest_ids: # circle 10NN
+    for i in nearest_ids: # circle 10NN data points
         plt.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', edgecolors="purple", linewidths=2, marker="o")
 
     # Test data
@@ -113,7 +113,8 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
 
     plt.xlabel("Width")
     plt.ylabel("Height")
-    plt.title("Pichu eller Pikachu?")
+    plt.suptitle("Pichu or Pikachu?", fontsize=14, fontweight="bold")
+    plt.title("(close this window to see the accuracy plot)", fontsize=10)
     plt.grid(True)
     plt.legend()
     plt.show()
@@ -122,7 +123,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     plt.axhline(y = np.mean(collected_accuracy)*100, linestyle="--", label=f"Mean accuracy: {np.mean(collected_accuracy):.1%}", color="green")
     plt.xlabel("Loop (no.)")
     plt.ylabel("Accuracy (%)")
-    plt.title("The accuracy of the Pichu/Pikachu model")
+    plt.title("The accuracy of the Pichu/Pikachu model", fontsize=14, fontweight="bold")
     plt.ylim(85, 100)
     plt.grid(True)
     plt.legend()
@@ -183,10 +184,10 @@ def calculate_accuracy(total_x, total_y, total_z):
         train_x, train_y, train_z, test_x, test_y, test_z = split_data_points(total_x, total_y, total_z)
         predictions, *_ = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y)
         
-        correct_predictions = np.sum(predictions == test_z)
+        correct_predictions = np.sum(predictions == test_z) # True positives & True negatives
         accuracy = np.mean(predictions == test_z)
         collected_accuracy.append(accuracy)
-        total_predictions = len(predictions)
+        total_predictions = len(predictions) # True positives, True negatives, False positives & False negatives (total)
         print(f"The accuracy of this loop ({i+1}) is: {accuracy:.2%}. The model got it right {correct_predictions} out of {total_predictions} times.")
 
     mean_accuracy = np.mean(collected_accuracy)
