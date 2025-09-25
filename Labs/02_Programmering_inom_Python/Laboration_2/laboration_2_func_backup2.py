@@ -42,49 +42,49 @@ def split_and_convert_xyz(data_path):
 
         return test_x, test_y
 
-def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=None, input_y=None, print_sample_classification=False):
-    """ A function for assigning the nearest neighbour and then printing out the specific sample classification. """
+def assign_nearest_neighbour(train_x, train_y, train_z, test_x=None, test_y=None, input_x=None, input_y=None, print_sample_classification=False):
+    """ A function for assigning the nearest neighbour(s) and then printing out the specific sample classification. """
 
     training_points = np.column_stack((train_x, train_y))
     training_labels = train_z
-    test_points = np.column_stack((test_x, test_y))
-
-    predictions = []
-
-    for test_point in test_points:
-        diff_xy = training_points[:, np.newaxis, :] - test_point
-        distances = np.sqrt(np.sum(np.pow(diff_xy, 2), axis=2))
-        nearest_id = np.argmin(distances, axis=0)
-        prediction_label = training_labels[nearest_id]
-        predictions.append(prediction_label)
-
-    predictions = np.array(predictions).ravel()
-
-    if print_sample_classification:
-        for i in range(len(test_x)):
-            pokemon_1NN = "Pichu" if predictions[i] == 0 else "Pikachu"
-            print(f"Sample with (width, height): ({test_x[i]}, {test_y[i]}) classified as {pokemon_1NN}")
+    test_points = None if test_x is None or test_y is None else np.column_stack((test_x, test_y))
 
     pokemon_1NN = None
     pokemon_10NN = None
     nearest_ids = None
 
+    def name_pokemon(label):
+        return "Pichu" if label == 0 else "Pikachu"
+    
+    def classify_data_point(point, k=1):
+        point = np.asarray(point).ravel()
+        distances = np.sqrt(np.sum(np.pow((training_points - point), 2), axis=1))
+        nearest_ids = np.argsort(distances)[:k]
+        nearest_ids_labels = training_labels[nearest_ids]
+
+        if k == 1:
+            return nearest_ids_labels[0]
+        else:
+            label_count = np.bincount(nearest_ids_labels.astype(int))
+            return np.argmax(label_count)
+        
+    predictions = None
+
+    if test_points is not None:
+        predictions = np.array([classify_data_point(point, k=1) for point in test_points])
+
+        if print_sample_classification:
+            for i, prediction in enumerate(predictions):
+                print(f"Sample with (width, height): ({test_x[i]}, {test_y[i]}) classified as {name_pokemon(prediction)}")
+
     if input_x is not None and input_y is not None:
         input_data_point = np.array([input_x, input_y])
-        distances = np.sqrt(np.sum(np.pow(training_points - input_data_point, 2), axis=1))
+
+        pokemon_1NN = classify_data_point(input_data_point, k=1)
+        print(f"Your input ({input_x}, {input_y}) classifies as {name_pokemon(pokemon_1NN)} with 1-NN.")
+        pokemon_10NN = classify_data_point(input_data_point, k=10)
+        print(f"Your input ({input_x}, {input_y}) classifies as {name_pokemon(pokemon_10NN)} with 10-NN.")
         
-        nearest_id = np.argmin(distances) # 1-NN
-        prediction_label_1NN = training_labels[nearest_id]
-        pokemon_1NN = "Pichu" if prediction_label_1NN == 0 else "Pikachu"
-        print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_1NN} with 1-NN.")
-
-        nearest_ids = np.argsort(distances)[:10] # 10-NN
-        nearest_ids_labels = training_labels[nearest_ids]
-        label_count = np.bincount(nearest_ids_labels.astype(int))
-        prediction_label_10NN = np.argmax(label_count)
-        pokemon_10NN = "Pichu" if prediction_label_10NN == 0 else "Pikachu"
-        print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_10NN} with 10-NN.")
-
     return predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids
 
 def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, input_x, input_y, nearest_ids, training_points, collected_accuracy):
@@ -93,8 +93,9 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     # Training data
     plt.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
     plt.scatter(training_points[train_z == 1, 0], training_points[train_z == 1, 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
-    for i in nearest_ids: # circle 10NN
-        plt.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', edgecolors="purple", linewidths=2, marker="o")
+    if nearest_ids is not None:
+        for i in nearest_ids:
+            plt.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', edgecolors="purple", linewidths=2, marker="o")
 
     # Test data
     plt.scatter(test_x[predictions == 0], test_y[predictions == 0], color="green", edgecolors="black", label="Pichu (test)", marker="^")
@@ -111,6 +112,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     else:
         plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 10-NN)", marker="*", s=175)
 
+    # Plot the data points
     plt.xlabel("Width")
     plt.ylabel("Height")
     plt.title("Pichu eller Pikachu?")
@@ -118,6 +120,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     plt.legend()
     plt.show()
 
+    # Plot the accuracy
     plt.plot(range(1, len(collected_accuracy)+1), np.array(collected_accuracy)*100, marker="^", label="Accuracy per loop", color="purple")
     plt.axhline(y = np.mean(collected_accuracy)*100, linestyle="--", label=f"Mean accuracy: {np.mean(collected_accuracy):.1%}", color="green")
     plt.xlabel("Loop (no.)")
@@ -128,7 +131,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     plt.legend()
     plt.show()
 
-def user_input(training_points, training_labels):
+def user_input():
     """ A function for handling the user input data. """
 
     while True:
@@ -147,13 +150,14 @@ def user_input(training_points, training_labels):
 
         else:
             print(f"Thank you!")
-            predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x, input_y)
+            assign_nearest_neighbour(train_x, train_y, train_z, input_x, input_y)
             break
 
-    return input_x, input_y, predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids
+    return input_x, input_y
 
 def split_data_points(total_x, total_y, total_z):
     """ A function for splitting the original datapoints into both training (100) and test (50) points equally divided amongst Pichu and Pikachu. """
+
     training = 50
     test = 25
 
@@ -177,6 +181,7 @@ def split_data_points(total_x, total_y, total_z):
 
 def calculate_accuracy(total_x, total_y, total_z):
     """ A function for calculating the accuracy of the model by looping the shuffled training and test data ten times and then presenting the mean accuracy. """
+    
     collected_accuracy = []
     
     for i in range(10):
@@ -201,12 +206,12 @@ train_x, train_y, train_z = split_and_convert_xyz(data_path_training)
 # PROCESS THE TEST DATA
 read_and_clean_data(data_path_test)
 test_x, test_y = split_and_convert_xyz(data_path_test)
-predictions, training_points, training_labels, *_ = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, print_sample_classification=True)
+predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, print_sample_classification=True)
 
 # PROCESS THE USER INPUT DATA
-input_x, input_y, _, _, _, pokemon_1NN, pokemon_10NN, nearest_ids = user_input(training_points, training_labels)
+input_x, input_y = user_input()
 
-# RE-PROCESS THE ORIGINAL TRAINING DATA INTO BOTH TRAINING AND TEST DATA
+# RE-PROCESS THE ORIGINAL TRAINING DATA & CALCULATE ACCURACY
 total_x, total_y, total_z = split_and_convert_xyz(data_path_training)
 collected_accuracy = calculate_accuracy(total_x, total_y, total_z)
 
