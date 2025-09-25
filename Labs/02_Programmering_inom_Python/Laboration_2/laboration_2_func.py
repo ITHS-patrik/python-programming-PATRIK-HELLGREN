@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+from pathlib import Path
 
-training_path = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
-test_path = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
+root_dir = Path(__file__).parent
+training_path = root_dir/"datapoints.txt"
+test_path = root_dir/"testpoints.txt"
 
 def read_and_clean_data(data_path):
     """ Reading data from the source files and finally converting it to NumPy arrays. """
@@ -27,29 +29,28 @@ def read_and_clean_data(data_path):
         sys.exit(1)
 
     if data_path == training_path:
-        train_x, train_y, train_z = zip(*read_and_clean_data(data_path))
+        train_x, train_y, train_z = zip(*cleaned_data)
         train_x, train_y, train_z = np.array(train_x), np.array(train_y), np.array(train_z)
 
         return cleaned_data, train_x, train_y, train_z
     else:
-        test_x, test_y = zip(*read_and_clean_data(data_path))
+        test_x, test_y = zip(*cleaned_data)
         test_x, test_y = np.array(test_x), np.array(test_y)
 
         return cleaned_data, test_x, test_y
 
-def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=None, input_y=None, print_sample_classification=False):
-    """ Assigning nearest neighbour(s) for input data and both sets of test data, then printing out the specific sample classification. """
+def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=None, input_y=None, print_sample_classification=False): #  SEPARATE SUB DEFS FOR 1NN AND 10NN??? SHORTEN THIS DEF!
+    """ Assigning nearest neighbour(s) for input data and both sets of test data, then printing the specific sample classification. """
 
     training_points = np.column_stack((train_x, train_y))
     training_labels = train_z
     test_points = np.column_stack((test_x, test_y))
-
     predictions = []
 
     for test_point in test_points:
         diff_xy = training_points[:, np.newaxis, :] - test_point
         distances = np.sqrt(np.sum(np.pow(diff_xy, 2), axis=2))
-        nearest_id = np.argmin(distances, axis=0)
+        nearest_id = np.argmin(distances)
         prediction_label = training_labels[nearest_id]
         predictions.append(prediction_label)
 
@@ -69,27 +70,27 @@ def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=
         distances = np.sqrt(np.sum(np.pow(training_points - input_data_point, 2), axis=1))
         
         nearest_id = np.argmin(distances) # 1-NN
-        prediction_label_1NN = training_labels[nearest_id]
-        pokemon_1nn = "Pichu" if prediction_label_1NN == 0 else "Pikachu"
+        prediction_label_1nn = training_labels[nearest_id]
+        pokemon_1nn = "Pichu" if prediction_label_1nn == 0 else "Pikachu"
         print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_1nn} with 1-NN.")
 
         nearest_ids = np.argsort(distances)[:10] # 10-NN
         nearest_ids_labels = training_labels[nearest_ids]
         label_count = np.bincount(nearest_ids_labels.astype(int))
-        prediction_label_10NN = np.argmax(label_count)
-        pokemon_10nn = "Pichu" if prediction_label_10NN == 0 else "Pikachu"
+        prediction_label_10nn = np.argmax(label_count)
+        pokemon_10nn = "Pichu" if prediction_label_10nn == 0 else "Pikachu"
         print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_10nn} with 10-NN.")
 
     return predictions, training_points, training_labels, pokemon_1nn, pokemon_10nn, nearest_ids
 
 def plot_data(train_z, test_x, test_y, predictions, pokemon_1nn, pokemon_10nn, input_x, input_y, nearest_ids, training_points, collected_accuracy):
-    """ Plot all the training, test and input data. The accuracy data will be plotted in a separate window. """
+    """ Plotting all the training, test and input data. The accuracy data is being plotted in a separate window. """
     
     # Training data
     plt.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
     plt.scatter(training_points[train_z == 1, 0], training_points[train_z == 1, 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
     for i in nearest_ids: # circle 10NN data points
-        plt.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', edgecolors="purple", linewidths=2, marker="o")
+        plt.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', alpha=0.6, edgecolors="purple", linewidths=2, marker="o")
 
     # Test data
     plt.scatter(test_x[predictions == 0], test_y[predictions == 0], color="green", edgecolors="black", label="Pichu (test)", marker="^")
@@ -191,7 +192,7 @@ def calculate_accuracy(total_x, total_y, total_z):
     return collected_accuracy
 
 _, train_x, train_y, train_z = read_and_clean_data(training_path)
-test_x, test_y = read_and_clean_data(test_path)
+_, test_x, test_y = read_and_clean_data(test_path)
 predictions, training_points, training_labels, *_ = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, print_sample_classification=True)
 input_x, input_y, _, _, _, pokemon_1nn, pokemon_10nn, nearest_ids = user_input(training_points, training_labels)
 _, total_x, total_y, total_z = read_and_clean_data(training_path)
