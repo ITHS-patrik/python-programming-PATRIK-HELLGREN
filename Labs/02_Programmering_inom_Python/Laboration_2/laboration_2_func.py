@@ -3,9 +3,9 @@ import numpy as np
 import sys
 from pathlib import Path
 
-root_dir = Path(__file__).parent
-training_path = root_dir/"datapoints.txt"
-test_path = root_dir/"testpoints.txt"
+current_dir = Path(__file__).parent
+training_path = current_dir/"datapoints.txt"
+test_path = current_dir/"testpoints.txt"
 
 def read_and_clean_data(data_path):
     """ Reading data from the source files and finally converting it to NumPy arrays. """
@@ -23,7 +23,6 @@ def read_and_clean_data(data_path):
                     data = data.split(" ", 1)[1]
                     data_points = [float(d.strip().replace("(", "").replace(")", "")) for d in data.split(",")]
                 cleaned_data.append(data_points)
-
     except OSError as e:
         print(f'An error occurred while reading the training data file: {e}.\n'f"Please check your path/file name.\nClosing the application.")
         sys.exit(1)
@@ -39,90 +38,72 @@ def read_and_clean_data(data_path):
 
         return cleaned_data, test_x, test_y
 
-def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=None, input_y=None, print_sample_classification=False): #  SEPARATE SUB DEFS FOR 1NN AND 10NN??? SHORTEN THIS DEF!
+def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=None, input_y=None, print_sample_classification=False):
     """ Assigning nearest neighbour(s) for input data and both sets of test data, then printing the specific sample classification. """
 
     training_points = np.column_stack((train_x, train_y))
-    training_labels = train_z
+    training_labels = np.array(train_z)
     test_points = np.column_stack((test_x, test_y))
     predictions = []
 
-    for test_point in test_points:
-        diff_xy = training_points[:, np.newaxis, :] - test_point
-        distances = np.sqrt(np.sum(np.pow(diff_xy, 2), axis=2))
-        nearest_id = np.argmin(distances)
-        prediction_label = training_labels[nearest_id]
-        predictions.append(prediction_label)
+    predictions = training_labels[np.argmin(np.linalg.norm(training_points[:, None, :] - test_points[None, :, :], axis=2), axis=0)] # Calculating the distance between each test and training point and making a prediction.
 
-    predictions = np.array(predictions).ravel()
-
-    if print_sample_classification:
+    if print_sample_classification: # only printing this for testpoints.txt and not for the 50 test points in datapoints.txt to not crowd the terminal.
         for i in range(len(test_x)):
-            pokemon_1nn = "Pichu" if predictions[i] == 0 else "Pikachu"
-            print(f"Sample with (width, height): ({test_x[i]}, {test_y[i]}) classified as {pokemon_1nn}")
+            print(f"Sample with (width, height): ({test_x[i]}, {test_y[i]}) classified as {"Pichu" if predictions[i] == 0 else "Pikachu"}")
 
-    pokemon_1nn = None
-    pokemon_10nn = None
-    nearest_ids = None
+    pokemon_1nn = pokemon_10nn = nearest_ids = None
 
-    if input_x is not None and input_y is not None:
-        input_data_point = np.array([input_x, input_y])
-        distances = np.sqrt(np.sum(np.pow(training_points - input_data_point, 2), axis=1))
+    if input_x is not None and input_y is not None: # making predictions based on user input (both 1nn and 10nn).
+        distances = np.linalg.norm(training_points - np.array([input_x, input_y]), axis=1)
         
-        nearest_id = np.argmin(distances) # 1-NN
-        prediction_label_1nn = training_labels[nearest_id]
+        prediction_label_1nn = training_labels[np.argmin(distances)] # 1-NN
         pokemon_1nn = "Pichu" if prediction_label_1nn == 0 else "Pikachu"
         print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_1nn} with 1-NN.")
 
         nearest_ids = np.argsort(distances)[:10] # 10-NN
-        nearest_ids_labels = training_labels[nearest_ids]
-        label_count = np.bincount(nearest_ids_labels.astype(int))
-        prediction_label_10nn = np.argmax(label_count)
-        pokemon_10nn = "Pichu" if prediction_label_10nn == 0 else "Pikachu"
+        label_count = np.bincount(training_labels[nearest_ids].astype(int)).argmax()
+        pokemon_10nn = "Pichu" if label_count == 0 else "Pikachu"
         print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_10nn} with 10-NN.")
 
     return predictions, training_points, training_labels, pokemon_1nn, pokemon_10nn, nearest_ids
 
 def plot_data(train_z, test_x, test_y, predictions, pokemon_1nn, pokemon_10nn, input_x, input_y, nearest_ids, training_points, collected_accuracy):
-    """ Plotting all the training, test and input data. The accuracy data is being plotted in a separate window. """
+    """ Plotting all the training, test and input data and also the accuracy of the model (in a separate plot). """
+    fig, (f1, f2) = plt.subplots(1, 2, figsize=(13,6))
+    fig.suptitle("Lab 2 - Pichu or Pikachu?", fontsize=16, fontweight="bold")
+    fig.set_facecolor("lightgrey")
     
     # Training data
-    plt.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
-    plt.scatter(training_points[train_z == 1, 0], training_points[train_z == 1, 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
-    for i in nearest_ids: # circle 10NN data points
-        plt.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', alpha=0.6, edgecolors="purple", linewidths=2, marker="o")
+    f1.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
+    f1.scatter(training_points[train_z == 1, 0], training_points[train_z == 1, 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
+    for i in nearest_ids: # change the edgecolor for 10NN data points.
+        f1.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', alpha=0.6, edgecolors="purple", linewidths=2, marker="o")
 
     # Test data
-    plt.scatter(test_x[predictions == 0], test_y[predictions == 0], color="green", edgecolors="black", label="Pichu (test)", marker="^")
-    plt.scatter(test_x[predictions == 1], test_y[predictions == 1], color="yellow", edgecolors="black", label="Pikachu (test)", marker="^")
+    f1.scatter(test_x[predictions == 0], test_y[predictions == 0], color="green", edgecolors="black", label="Pichu (test)", marker="^")
+    f1.scatter(test_x[predictions == 1], test_y[predictions == 1], color="yellow", edgecolors="black", label="Pikachu (test)", marker="^")
 
     # Input data
-    if pokemon_1nn == "Pichu":
-        plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 1-NN)", marker="*", s=175)
-    else:
-        plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 1-NN)", marker="*", s=175)
+    f1.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 1-NN)" if pokemon_1nn == "Pichu" else "Pikachu (user input 1-NN)", marker="*", s=125)
+    f1.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 10-NN)" if pokemon_10nn == "Pichu" else "Pikachu (user input 10-NN)", marker="*", s=125)
 
-    if pokemon_10nn == "Pichu":
-        plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 10-NN)", marker="*", s=175)
-    else:
-        plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 10-NN)", marker="*", s=175)
+    f1.set_xlabel("Width (cm)")
+    f1.set_ylabel("Height (cm)")
+    f1.set_title("Data points and nearest neighbour(s)", fontsize=12)
+    f1.grid(True)
+    f1.legend()
 
-    plt.xlabel("Width")
-    plt.ylabel("Height")
-    plt.suptitle("Pichu or Pikachu?", fontsize=14, fontweight="bold")
-    plt.title("(close this window to see the accuracy plot)", fontsize=10)
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+    f2.plot(range(1, len(collected_accuracy)+1), np.array(collected_accuracy)*100, marker="^", label="Accuracy per loop", color="purple")
+    f2.axhline(y = np.mean(collected_accuracy)*100, linestyle="--", label=f"Mean accuracy: {np.mean(collected_accuracy):.1%}", color="green")
+    f2.set_xlabel("Loop (no.)")
+    f2.set_ylabel("Accuracy (%)")
+    f2.set_title("The accuracy of the model", fontsize=12)
+    f2.set_ylim(83, 100)
+    f2.grid(True)
+    f2.legend()
 
-    plt.plot(range(1, len(collected_accuracy)+1), np.array(collected_accuracy)*100, marker="^", label="Accuracy per loop", color="purple")
-    plt.axhline(y = np.mean(collected_accuracy)*100, linestyle="--", label=f"Mean accuracy: {np.mean(collected_accuracy):.1%}", color="green")
-    plt.xlabel("Loop (no.)")
-    plt.ylabel("Accuracy (%)")
-    plt.title("The accuracy of the Pichu/Pikachu model", fontsize=14, fontweight="bold")
-    plt.ylim(85, 100)
-    plt.grid(True)
-    plt.legend()
+    plt.tight_layout()
     plt.show()
 
 def user_input(training_points, training_labels):
@@ -140,7 +121,7 @@ def user_input(training_points, training_labels):
             if str(e) == "NegativeValue":
                 print(f"Null or negative values are not accepted.\nYour input was: ({input_x}, {input_y}).\nTry again.")
             else:
-                print(f'Your input "({input_x}, {input_y})" contains invalid characters! Only use floats > 0.\nTry again.')
+                print(f'Your input "({input_x}, {input_y})" contains invalid characters! Only use integers or floats > 0.\nTry again.')
 
         else:
             print(f"Thank you!")
@@ -150,7 +131,7 @@ def user_input(training_points, training_labels):
     return input_x, input_y, predictions, training_points, training_labels, pokemon_1nn, pokemon_10nn, nearest_ids
 
 def split_data_points(total_x, total_y, total_z):
-    """ Splitting the original datapoints into both training (100) and test (50) points equally divided amongst Pichu and Pikachu. Also shuffling all data for use in calculating accuracy. """
+    """ Splitting the original datapoints into both training (100) and test (50) points equally divided amongst Pichu and Pikachu. Also shuffling all data for use in calculate_accuracy. """
     training = 50
     test = 25
 
