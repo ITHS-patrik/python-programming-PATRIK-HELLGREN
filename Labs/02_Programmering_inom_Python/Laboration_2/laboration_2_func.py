@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-data_path_training = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
-data_path_test = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
+training_path = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/datapoints.txt"
+test_path = "python-programming-PATRIK-HELLGREN/Labs/02_Programmering_inom_Python/Laboration_2/testpoints.txt"
 
 def read_and_clean_data(data_path):
-    """ A function for reading the data from the source file and then cleaning/preparing it for x/y/z-separation and conversion. """
+    """ Reading data from the source files and finally converting it to NumPy arrays. """
     cleaned_data = []
     
     try:
@@ -14,7 +14,7 @@ def read_and_clean_data(data_path):
             next(txt)
 
             for data in txt:
-                if data_path == data_path_training:
+                if data_path == training_path:
                     split_data = data.split(",")
                     data_points = [float(d.strip().replace("(", "").replace(")", "")) for d in split_data]
                 else:
@@ -23,27 +23,22 @@ def read_and_clean_data(data_path):
                 cleaned_data.append(data_points)
 
     except OSError as e:
-        print(f'An error occurred while reading the training data file: {e}.\n'f"Please check your path/file name, network and permissions.\nClosing the application.")
+        print(f'An error occurred while reading the training data file: {e}.\n'f"Please check your path/file name.\nClosing the application.")
         sys.exit(1)
-    
-    return cleaned_data
 
-def split_and_convert_xyz(data_path):
-    """ A function for splitting the cleaned data into x, y and z tuples and then converting them to np arrays. """
-
-    if data_path == data_path_training:
+    if data_path == training_path:
         train_x, train_y, train_z = zip(*read_and_clean_data(data_path))
         train_x, train_y, train_z = np.array(train_x), np.array(train_y), np.array(train_z)
 
-        return train_x, train_y, train_z
+        return cleaned_data, train_x, train_y, train_z
     else:
         test_x, test_y = zip(*read_and_clean_data(data_path))
         test_x, test_y = np.array(test_x), np.array(test_y)
 
-        return test_x, test_y
+        return cleaned_data, test_x, test_y
 
 def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=None, input_y=None, print_sample_classification=False):
-    """ A function for assigning the nearest neighbour and then printing out the specific sample classification. """
+    """ Assigning nearest neighbour(s) for input data and both sets of test data, then printing out the specific sample classification. """
 
     training_points = np.column_stack((train_x, train_y))
     training_labels = train_z
@@ -62,11 +57,11 @@ def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=
 
     if print_sample_classification:
         for i in range(len(test_x)):
-            pokemon_1NN = "Pichu" if predictions[i] == 0 else "Pikachu"
-            print(f"Sample with (width, height): ({test_x[i]}, {test_y[i]}) classified as {pokemon_1NN}")
+            pokemon_1nn = "Pichu" if predictions[i] == 0 else "Pikachu"
+            print(f"Sample with (width, height): ({test_x[i]}, {test_y[i]}) classified as {pokemon_1nn}")
 
-    pokemon_1NN = None
-    pokemon_10NN = None
+    pokemon_1nn = None
+    pokemon_10nn = None
     nearest_ids = None
 
     if input_x is not None and input_y is not None:
@@ -75,20 +70,20 @@ def assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x=
         
         nearest_id = np.argmin(distances) # 1-NN
         prediction_label_1NN = training_labels[nearest_id]
-        pokemon_1NN = "Pichu" if prediction_label_1NN == 0 else "Pikachu"
-        print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_1NN} with 1-NN.")
+        pokemon_1nn = "Pichu" if prediction_label_1NN == 0 else "Pikachu"
+        print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_1nn} with 1-NN.")
 
         nearest_ids = np.argsort(distances)[:10] # 10-NN
         nearest_ids_labels = training_labels[nearest_ids]
         label_count = np.bincount(nearest_ids_labels.astype(int))
         prediction_label_10NN = np.argmax(label_count)
-        pokemon_10NN = "Pichu" if prediction_label_10NN == 0 else "Pikachu"
-        print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_10NN} with 10-NN.")
+        pokemon_10nn = "Pichu" if prediction_label_10NN == 0 else "Pikachu"
+        print(f"Your input ({input_x}, {input_y}) classifies as {pokemon_10nn} with 10-NN.")
 
-    return predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids
+    return predictions, training_points, training_labels, pokemon_1nn, pokemon_10nn, nearest_ids
 
-def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, input_x, input_y, nearest_ids, training_points, collected_accuracy):
-    """ A function for plotting all the training, test and input data. The accuracy data will be plotted in a separate window. """
+def plot_data(train_z, test_x, test_y, predictions, pokemon_1nn, pokemon_10nn, input_x, input_y, nearest_ids, training_points, collected_accuracy):
+    """ Plot all the training, test and input data. The accuracy data will be plotted in a separate window. """
     
     # Training data
     plt.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
@@ -101,12 +96,12 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     plt.scatter(test_x[predictions == 1], test_y[predictions == 1], color="yellow", edgecolors="black", label="Pikachu (test)", marker="^")
 
     # Input data
-    if pokemon_1NN == "Pichu":
+    if pokemon_1nn == "Pichu":
         plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 1-NN)", marker="*", s=175)
     else:
         plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 1-NN)", marker="*", s=175)
 
-    if pokemon_10NN == "Pichu":
+    if pokemon_10nn == "Pichu":
         plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 10-NN)", marker="*", s=175)
     else:
         plt.scatter(input_x, input_y, color="red", edgecolors="black", label="Pikachu (user input 10-NN)", marker="*", s=175)
@@ -130,7 +125,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, i
     plt.show()
 
 def user_input(training_points, training_labels):
-    """ A function for handling the user input data. """
+    """ Checking the user input data for errors and if none sending it forward to assign nearest neighbours. """
 
     while True:
         try:
@@ -148,13 +143,13 @@ def user_input(training_points, training_labels):
 
         else:
             print(f"Thank you!")
-            predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x, input_y)
+            predictions, training_points, training_labels, pokemon_1nn, pokemon_10nn, nearest_ids = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, input_x, input_y)
             break
 
-    return input_x, input_y, predictions, training_points, training_labels, pokemon_1NN, pokemon_10NN, nearest_ids
+    return input_x, input_y, predictions, training_points, training_labels, pokemon_1nn, pokemon_10nn, nearest_ids
 
 def split_data_points(total_x, total_y, total_z):
-    """ A function for splitting the original datapoints into both training (100) and test (50) points equally divided amongst Pichu and Pikachu. """
+    """ Splitting the original datapoints into both training (100) and test (50) points equally divided amongst Pichu and Pikachu. Also shuffling all data for use in calculating accuracy. """
     training = 50
     test = 25
 
@@ -177,7 +172,7 @@ def split_data_points(total_x, total_y, total_z):
     return train_x, train_y, train_z, test_x, test_y, test_z
 
 def calculate_accuracy(total_x, total_y, total_z):
-    """ A function for calculating the accuracy of the model by looping the shuffled training and test data ten times and then presenting the mean accuracy. """
+    """ Looping through the 50 test data points 10 times, calculating the accuracy of every loop and then printing the mean accuracy of the model. """
     collected_accuracy = []
     
     for i in range(10):
@@ -195,21 +190,10 @@ def calculate_accuracy(total_x, total_y, total_z):
 
     return collected_accuracy
 
-# PROCESS THE TRAINING DATA
-read_and_clean_data(data_path_training)
-train_x, train_y, train_z = split_and_convert_xyz(data_path_training)
-
-# PROCESS THE TEST DATA
-read_and_clean_data(data_path_test)
-test_x, test_y = split_and_convert_xyz(data_path_test)
+_, train_x, train_y, train_z = read_and_clean_data(training_path)
+test_x, test_y = read_and_clean_data(test_path)
 predictions, training_points, training_labels, *_ = assign_nearest_neighbour(train_x, train_y, train_z, test_x, test_y, print_sample_classification=True)
-
-# PROCESS THE USER INPUT DATA
-input_x, input_y, _, _, _, pokemon_1NN, pokemon_10NN, nearest_ids = user_input(training_points, training_labels)
-
-# RE-PROCESS THE ORIGINAL TRAINING DATA INTO BOTH TRAINING AND TEST DATA
-total_x, total_y, total_z = split_and_convert_xyz(data_path_training)
+input_x, input_y, _, _, _, pokemon_1nn, pokemon_10nn, nearest_ids = user_input(training_points, training_labels)
+_, total_x, total_y, total_z = read_and_clean_data(training_path)
 collected_accuracy = calculate_accuracy(total_x, total_y, total_z)
-
-# PLOT ALL DATA
-plot_data(train_z, test_x, test_y, predictions, pokemon_1NN, pokemon_10NN, input_x, input_y, nearest_ids, training_points, collected_accuracy)
+plot_data(train_z, test_x, test_y, predictions, pokemon_1nn, pokemon_10nn, input_x, input_y, nearest_ids, training_points, collected_accuracy)
