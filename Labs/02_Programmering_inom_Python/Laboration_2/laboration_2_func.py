@@ -77,9 +77,7 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1nn, pokemon_10nn, i
     # Training data
     f1.scatter(training_points[train_z == 0, 0], training_points[train_z == 0, 1], color="green", alpha=0.6, edgecolors="black", label="Pichu", marker="o")
     f1.scatter(training_points[train_z == 1, 0], training_points[train_z == 1, 1], color="yellow", alpha=0.6, edgecolors="black", label="Pikachu", marker="o")
-    for i in nearest_ids: # change the edgecolor for 10NN data points.
-        f1.scatter(training_points[i, 0], training_points[i, 1], color=f'{"green" if train_z[i] == 0 else "yellow"}', alpha=0.6, edgecolors="purple", linewidths=2, marker="o")
-
+    
     # Test data
     f1.scatter(test_x[predictions == 0], test_y[predictions == 0], color="green", edgecolors="black", label="Pichu (test)", marker="^")
     f1.scatter(test_x[predictions == 1], test_y[predictions == 1], color="yellow", edgecolors="black", label="Pikachu (test)", marker="^")
@@ -87,6 +85,8 @@ def plot_data(train_z, test_x, test_y, predictions, pokemon_1nn, pokemon_10nn, i
     # Input data
     f1.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 1-NN)" if pokemon_1nn == "Pichu" else "Pikachu (user input 1-NN)", marker="*", s=125)
     f1.scatter(input_x, input_y, color="red", edgecolors="black", label="Pichu (user input 10-NN)" if pokemon_10nn == "Pichu" else "Pikachu (user input 10-NN)", marker="*", s=125)
+    for i in nearest_ids: # change the edgecolor for 10NN data points.
+       f1.scatter(training_points[i, 0], training_points[i, 1], color="None", label="10 nearest neighbours" if i == nearest_ids[-1] else "", edgecolors="purple", linewidths=1.5, marker="o")
 
     f1.set_xlabel("Width (cm)")
     f1.set_ylabel("Height (cm)")
