@@ -39,10 +39,10 @@ line_comparison = pd.DataFrame({"y(x)": labelled_data_yx,
                                 "h(x)": labelled_data_hx
                                 })
 
-#print(line_comparison.head().to_string(index=False))
-#print(line_comparison.sum())
-
-plt.scatter(x, y, edgecolors="black", alpha=0.6, color=["green" if i == 0 else "blue" for i in labelled_data["Classification: y(x)"]])
+mask_0 = labelled_data["Classification: y(x)"] == 0
+mask_1 = labelled_data["Classification: y(x)"] == 1
+plt.scatter(x[mask_0], y[mask_0], edgecolors="black", alpha=0.6, color="green", label=rf"y(x) classification 0: $\bf{len(line_comparison["y(x)"]) - line_comparison["y(x)"].sum()}$")
+plt.scatter(x[mask_1], y[mask_1], edgecolors="black", alpha=0.6, color="blue", label=rf"y(x) classification 1: $\bf{line_comparison["y(x)"].sum()}$")
 plt.plot(x, line_yx, color="black", label="y(x) = -1.05x (my line)", linewidth=1)
 plt.plot(x, line_fx, color="red", label="f(x) = -0.489x", linewidth=1)
 plt.plot(x, line_gx, color="green", label="g(x) = -2x + 0.16", linewidth=1)
@@ -50,7 +50,7 @@ plt.plot(x, line_hx, color="blue", label="h(x) = 800x - 120", linewidth=1)
 plt.title("Laboration 3", fontweight="bold")
 plt.ylim(-6,6)
 plt.xlim(-6,6)
-plt.legend()
+plt.legend(fontsize=8.5, loc = "upper left")
 plt.tight_layout()
 plt.show()
 
