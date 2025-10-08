@@ -19,7 +19,7 @@ def read_data():
     return data, x, y
 
 def calculate_line_and_classify(k, x, m, data):
-    df = data.copy() # creates a copy to not overwrite the original DataFrame later on during line comparison.
+    df = data.copy() # Creates a copy to not overwrite the original DataFrame later on during line comparison.
 
     line = k * x + m
     df["Classification"] = (df["y"] > line).astype(int)

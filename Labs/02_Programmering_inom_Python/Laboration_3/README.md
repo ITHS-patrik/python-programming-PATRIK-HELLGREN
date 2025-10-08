@@ -1,7 +1,7 @@
 # Laboration 3 - Linjär klassificering
 
 ## Om programmet
-Detta program identifierar en linje med formen `y = kx + m` som separerar vår inlästa data så jämnt som möjligt. Datan klassificeras beroende på vilken sida om linjen den befinner sig. Därefter skapas och sparas en ny datafil med både datapunkter och klassificeringar. Avslutningsvis plottas resultatet i en graf.
+Detta program använder en linje med formen `y = kx + m` som separerar vår inlästa data så jämnt som möjligt. Datan klassificeras beroende på vilken sida om linjen den befinner sig. Därefter skapas och sparas en ny datafil med både datapunkter och klassificeringar. Avslutningsvis plottas resultatet i en graf.
 
 ## Filer
 `laboration_3.py` - Huvudprogrammet, beräknar linjer och klassificerar data.<br>
